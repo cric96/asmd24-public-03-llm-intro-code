@@ -1,16 +1,17 @@
 package it.unibo.prompt.zero;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import it.unibo.utils.LlmConstants;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 
 public class ZeroShotExample {
     public static void main(String[] args) {
-        final ChatLanguageModel model = OllamaChatModel.builder()
-            .baseUrl("http://localhost:11434")
+        final ChatModel model = OllamaChatModel.builder()
+            .baseUrl(LlmConstants.OLLAMA_BASE_URL)
             .logRequests(true)
             .logResponses(true)
-            .modelName("qwen2.5:3b")
-            .numPredict(128)
+            .modelName(LlmConstants.CHAT_MODEL_QWEN)
+            .numPredict(LlmConstants.MAX_PREDICT_TOKENS)
             .temperature(0.0)
             .build();
         final var zeroShot = new ZeroShotAgent(model, "Just reply with the RIGHT number.");

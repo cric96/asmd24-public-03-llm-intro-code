@@ -6,23 +6,25 @@ This primer covers the essentials of working with Large Language Models (LLMs) f
 1. How to programmatically interact with LLMs
 2. How to leverage embeddings for text similarity search
 3. How to generate text using LLMs
-4. Key prompt engineering techniques
+4. Some prompt engineering techniques
+5. A simple application with an LLM in the loop
 
 ## Requirements
 
 We'll use the `ollama` library to download and run pre-trained LLMs.
+We will also leverage gemini as a reference for state of the art LLMs.
 
 - Install the library following instructions in the [official repository](https://ollama.com/download)
 - Download the required models:
 ```bash
 # Small LLM model
-ollama pull smollm:128m
+ollama pull smollm2:135m
 
 # Large embedding model
 ollama pull mxbai-embed-large
 
 # Good performing SLM model
-ollama pull qwen2.5:3b
+ollama pull qwen3:0.6b
 ```
 
 To check the available models, run:
@@ -31,13 +33,15 @@ ollama list
 ```
 To verify the local installation, just run:
 ```bash
-ollama run smollm:128m
+ollama run smollm2:135m
 ```
 
 For this primer, we'll use:
-- `smollm:128m` - a small LLM model
+- `smollm2:135m` - a small LLM model
 - `mxbai-embed-large` - a large embedding model
-- `qwen2.5:3b` - as a good performing SLM model
+- `qwen3:0.6b` - as a good performing SLM model
+- A recent model from google (gemini or gemma) as gold reference.
+
 
 Feel free to experiment with other models to compare performance.
 

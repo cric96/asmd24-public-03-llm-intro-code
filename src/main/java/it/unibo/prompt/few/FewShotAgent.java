@@ -1,6 +1,6 @@
 package it.unibo.prompt.few;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import it.unibo.prompt.BasePromptBasedAgent;
 
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.List;
 public class FewShotAgent extends BasePromptBasedAgent {
 
     public FewShotAgent(
-        ChatLanguageModel model,
+        ChatModel model,
         List<QuestionAnswer> questionAnswers
     ) {
         super(model, promptFromKnowledge(questionAnswers));

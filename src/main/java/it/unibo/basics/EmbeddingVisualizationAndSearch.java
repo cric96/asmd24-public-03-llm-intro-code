@@ -1,5 +1,7 @@
 package it.unibo.basics;
 
+import it.unibo.utils.LlmConstants;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import it.unibo.utils.Vector;
 import smile.plot.swing.ScatterPlot;
@@ -15,6 +17,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 public class EmbeddingVisualizationAndSearch {
+    private static final int ELEMENTS_TO_SHOW = 5;
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
         List<String> datasetFromResource;
         try {
@@ -24,53 +27,49 @@ public class EmbeddingVisualizationAndSearch {
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException("Failed to read dataset", e);
         }
-
-        OllamaEmbeddingModel embeddingModel = OllamaEmbeddingModel.builder()
-            .baseUrl("http://localhost:11434")
-            .modelName("mxbai-embed-large")
+        // Embedding model definition
+        final EmbeddingModel embeddingModel = OllamaEmbeddingModel.builder()
+            .baseUrl(LlmConstants.OLLAMA_BASE_URL)
+            .modelName(LlmConstants.EMBEDDING_MODEL)
             .logRequests(true)
             .logResponses(true)
             .build(); // Assume this is implemented
-
-        List<Vector> datasetEmbeddings = datasetFromResource.stream()
+        // Effectively embed the dataset
+        final List<Vector> datasetEmbeddings = datasetFromResource.stream()
             .map(embeddingModel::embed).map(response -> response.content().vector())
             .map(Vector::fromFloatArray)
             .toList();
-
-
-        Vector questionOnSpace = Vector.fromFloatArray(
+        // Query examples
+        final Vector questionOnSpace = Vector.fromFloatArray(
             embeddingModel.embed("Where is Jupyter?").content().vector()
         );
-
         Vector questionOnAnime = Vector.fromFloatArray(
             embeddingModel.embed("Give more info about Naruto!").content().vector()
         );
-
-        double[][] allEmbeddings = Stream.concat(Stream.of(questionOnSpace, questionOnAnime), datasetEmbeddings.stream())
+        // Visualization with t-SNE
+        final double[][] allEmbeddings = Stream.concat(Stream.of(questionOnSpace, questionOnAnime), datasetEmbeddings.stream())
             .map(Vector::getData).toArray(double[][]::new);
-
-        var tsneFlatten = smile.manifold.TSNE.fit(allEmbeddings);
-
-        int[] labels = Stream.concat(Stream.of(1, 2), Stream.generate(() -> 0).limit(datasetEmbeddings.size()))
+        final var tsneFlatten = smile.manifold.TSNE.fit(allEmbeddings);
+        final int[] labels = Stream.concat(Stream.of(1, 2), Stream.generate(() -> 0).limit(datasetEmbeddings.size()))
             .mapToInt(Integer::intValue).toArray();
-
-        var plot = ScatterPlot.of(tsneFlatten.coordinates(), labels, 'x');
-
-        var canvas = plot.canvas();
+        final var plot = ScatterPlot.of(tsneFlatten.coordinates(), labels, 'x');
+        final var canvas = plot.canvas();
         canvas.window().setVisible(true);
-
-        var finClosestToNaruto = findNClosest(questionOnAnime, datasetEmbeddings, 5);
-        var finClosestToJupyter = findNClosest(questionOnSpace, datasetEmbeddings, 5);
-        
-        System.out.println("Closest to Naruto: " + finClosestToNaruto.stream().map(datasetFromResource::get).toList());
-        System.out.println("Closest to Jupyter: " + finClosestToJupyter.stream().map(datasetFromResource::get).toList());
+        // Search for closest embeddings
+        final var findClosestToNaruto = findNClosest(questionOnAnime, datasetEmbeddings, ELEMENTS_TO_SHOW);
+        final var findClosestToJupyter = findNClosest(questionOnSpace, datasetEmbeddings, ELEMENTS_TO_SHOW);
+        System.out.println("Closest to Naruto: " + findClosestToNaruto.stream().map(datasetFromResource::get).toList());
+        System.out.println("Closest to Jupyter: " + findClosestToJupyter.stream().map(datasetFromResource::get).toList());
     }
 
-    private static List<Integer> findNClosest(Vector question, List<Vector> dataset, int howMuch) {
+    private static List<Integer> findNClosest(Vector question, List<Vector> dataset, int howMany) {
         var indexes = Stream.iterate(0, i -> i + 1).limit(dataset.size()).toList();
         return indexes.stream()
-            .sorted(Comparator.comparingDouble(a -> dataset.get(a).cosineSimilarity(question)))
-            .limit(howMuch)
+            .sorted(Comparator
+                .<Integer>comparingDouble(a -> dataset.get(a).cosineSimilarity(question))
+                .reversed()
+            )
+            .limit(howMany)
             .toList();
     }
 }

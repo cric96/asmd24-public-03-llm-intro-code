@@ -1,7 +1,7 @@
 package it.unibo.prompt.zero;
 
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import it.unibo.prompt.BasePromptBasedAgent;
 
 /**
@@ -9,7 +9,7 @@ import it.unibo.prompt.BasePromptBasedAgent;
  * which gives the agent some context about the conversation.
  */
 public class ZeroShotAgent extends BasePromptBasedAgent {
-    public ZeroShotAgent(ChatLanguageModel model, String promptBase) {
+    public ZeroShotAgent(ChatModel model, String promptBase) {
         super(model, promptBase);
     }
 

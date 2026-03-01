@@ -1,22 +1,23 @@
 package it.unibo.chat;
 
+import it.unibo.utils.LlmConstants;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 
 import java.util.List;
 
 public class ChatBetweenAgents {
     public static void helloWorldAiWithTemperature() {
-        final ChatLanguageModel model = OllamaChatModel.builder()
-            .baseUrl("http://localhost:11434")
+        final ChatModel model = OllamaChatModel.builder()
+            .baseUrl(LlmConstants.OLLAMA_BASE_URL)
             .logRequests(true)
             .logResponses(true)
-            .temperature(1.0)
-            .modelName("smollm:360m")
-            .numPredict(128)
+            .temperature(LlmConstants.DEFAULT_TEMPERATURE)
+            .modelName(LlmConstants.CHAT_MODEL_SMOLLM)
+            .numPredict(LlmConstants.MAX_PREDICT_TOKENS)
             .build();
         final var startMessage = "Hello, what is your name?";
         final ChatAgent leftAgent = ChatAgent.createChatAgent(

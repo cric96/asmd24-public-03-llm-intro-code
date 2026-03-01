@@ -1,7 +1,7 @@
 package it.unibo.chat;
 
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 
 import java.util.List;
 
@@ -35,7 +35,7 @@ public interface ChatAgent {
      * @param initialMessage The initial message to be used for the chat.
      * @return The chat agent created.
      */
-    static ChatAgent createChatAgent(ChatLanguageModel model, List<ChatMessage> initialMessage) {
+    static ChatAgent createChatAgent(ChatModel model, List<ChatMessage> initialMessage) {
         return new ChatAgentBase(model, initialMessage);
     }
 }

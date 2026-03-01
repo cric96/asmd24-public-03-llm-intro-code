@@ -1,12 +1,11 @@
 package it.unibo.prompt;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import it.unibo.utils.LlmConstants;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.DimensionAwareEmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
-import it.unibo.prompt.chain.ChainOfThoughtAgent;
 import it.unibo.prompt.few.FewShotAgent;
-import it.unibo.prompt.self.SelfConsistencyAgent;
 import it.unibo.prompt.zero.ZeroShotAgent;
 import it.unibo.utils.Pair;
 
@@ -15,18 +14,18 @@ import java.util.stream.IntStream;
 
 public class TechniquesComparison {
     public static void main(String[] args) {
-        final ChatLanguageModel model = OllamaChatModel.builder()
-            .baseUrl("http://localhost:11434")
+        final ChatModel model = OllamaChatModel.builder()
+            .baseUrl(LlmConstants.OLLAMA_BASE_URL)
             .logRequests(true)
             .logResponses(true)
-            .modelName("qwen2.5:3b")
-            .numPredict(128)
+            .modelName(LlmConstants.CHAT_MODEL_QWEN)
+            .numPredict(LlmConstants.MAX_PREDICT_TOKENS)
             .build();
         final DimensionAwareEmbeddingModel embeddingModel = OllamaEmbeddingModel.builder()
-            .baseUrl("http://localhost:11434")
+            .baseUrl(LlmConstants.OLLAMA_BASE_URL)
             .logRequests(true)
             .logResponses(true)
-            .modelName("mxbai-embed-large")
+            .modelName(LlmConstants.EMBEDDING_MODEL)
             .build();
         var zeroShot = new ZeroShotAgent(model, "Just reply with the RIGHT number.");
         var fewShot = new FewShotAgent(model, List.of(
@@ -34,10 +33,8 @@ public class TechniquesComparison {
             FewShotAgent.QuestionAnswer.from("Today I have 6 apple, I eat 3, How many apple I have today?", "3"),
             FewShotAgent.QuestionAnswer.from("Yesterday I have 6 apple, today i eat 1, how many apple i have today?", "5")
         ));
-        var selfConsistency = new SelfConsistencyAgent(zeroShot, 10);
-        var chainOfThought = new ChainOfThoughtAgent(model);
         List<PromptBasedAgent> agents = List.of(
-            zeroShot, fewShot, selfConsistency, chainOfThought
+            zeroShot, fewShot
         );
         var evaluator = new CosineEmbeddingEvaluator(embeddingModel);
         var question = """
@@ -55,12 +52,12 @@ public class TechniquesComparison {
             .mapToObj(i -> Pair.of(i, scores.get(i)))
             .toList();
         var sortedScores = scoreWithIndex.stream()
-            .sorted((a, b) -> Double.compare(b.getY(), a.getY()))
+            .sorted((a, b) -> Double.compare(b.y(), a.y()))
             .toList();
         System.out.println("Question: " + question);
         // best
-        var best = sortedScores.getFirst().getX();
-        var worst = sortedScores.getLast().getX();
+        var best = sortedScores.getFirst().x();
+        var worst = sortedScores.getLast().x();
         System.out.println("Best: " + agents.get(best) + " with response: " + responses.get(best));
         System.out.println("Worst: " + agents.get(worst) + " with response: " + responses.get(worst));
     }

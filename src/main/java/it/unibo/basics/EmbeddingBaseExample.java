@@ -1,5 +1,6 @@
 package it.unibo.basics;
 
+import it.unibo.utils.LlmConstants;
 import dev.langchain4j.model.embedding.DimensionAwareEmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import it.unibo.utils.Vector;
@@ -10,27 +11,30 @@ import java.util.stream.Stream;
 public class EmbeddingBaseExample {
     public static void main(String[] args) {
         DimensionAwareEmbeddingModel embeddingModel = OllamaEmbeddingModel.builder()
-            .baseUrl("http://localhost:11434")
-            .modelName("mxbai-embed-large")
+            .baseUrl(LlmConstants.OLLAMA_BASE_URL)
+            .modelName(LlmConstants.EMBEDDING_MODEL)
             .logRequests(true)
             .logResponses(true)
             .build();
-
-        List<Vector> result = Stream.of("Hello", "how", "are", "you")
+        // Dataset
+        final var data = List.of("Hello", "how", "are", "you");
+        List<Vector> result = data.stream()
             .map(embeddingModel::embed)
             .map(response -> response.content().vector())
             .map(Vector::fromFloatArray)
             .toList();
-        System.out.println(result.getFirst().getData().length);
-        Vector anotherSentence = Vector.fromFloatArray(
+        System.out.println("Embedding size: " + result.getFirst().getData().length);
+        // Example: contextual distance
+        final Vector anotherSentence = Vector.fromFloatArray(
             embeddingModel.embed("Hi").content().vector()
         );
-        List<Double> distances = result.stream()
+        final List<Double> distances = result.stream()
             .map(vector -> vector.distance(anotherSentence))
             .toList();
-        List<Double> similarity = result.stream()
+        final List<Double> similarity = result.stream()
             .map(vector -> vector.cosineSimilarity(anotherSentence))
             .toList();
+        System.out.println("Dataset: " + data);
         System.out.println("Distances: " + distances);
         System.out.println("Similarity: " + similarity);
     }

@@ -2,16 +2,16 @@ package it.unibo.chat;
 
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 
 import java.util.ArrayList;
 import java.util.List;
 
 class ChatAgentBase implements ChatAgent {
-    private final ChatLanguageModel model;
+    private final ChatModel model;
     private final List<ChatMessage> messageFlow;
 
-    public ChatAgentBase(ChatLanguageModel model, List<ChatMessage> initialMessage) {
+    public ChatAgentBase(ChatModel model, List<ChatMessage> initialMessage) {
         this.model = model;
         this.messageFlow = new ArrayList<>();
         this.messageFlow.addAll(initialMessage);
