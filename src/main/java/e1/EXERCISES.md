@@ -1,92 +1,82 @@
 # Exercise: AI-Powered Interactive Story (MVC)
 
 Build an interactive text-adventure game where an LLM generates the narrative, questions, and
-choices dynamically. The player makes decisions that affect their stats until the story ends.
+choices dynamically.
+The player makes decisions that affect their stats until the story ends.
 
-## Exercise 1 — StoryResponse + JsonCodec (`e1.model` + `e1.engine`)
+## Exercise 0 — Study and Understand
 
-**Goal:** structured data exchange between your code and the LLM using Gson.
+The provided codebase contains the main abstractions and implementations for a simple interactive
+story engine. It is organised into the following packages:
 
-1. In `e1.model`, define `StoryResponse` — a record with: `narrative`, `question`, `choices`, `updatedPlayer`, `gameOver`.
-2. In `e1.engine`, create `JsonCodec` wrapping Gson with `encode(Object)` and `decode(String, Class<T>)`.
-3. Test:
-   - Round-trip `Player` through encode → decode
-   - Deserialize a JSON string to `StoryResponse` and check fields
-   - Malformed JSON throws an exception
+| Package | Contents |
+|---|---|
+| `e1.model` | `Story` , `StoryImpl`, `Player`, `StoryResponse` — the domain model. |
+| `e1.engine` | `StoryEngine`, `LLMStoryEngine`, `JsonCodec` — LLM communication layer. |
+| `e1.prompt` | `StoryPrompt`, `BeginPrompt`, `AdvancePrompt` — prompt construction. |
+| `e1.view` | `StoryView`, `ConsoleStoryView` — user interaction (console-based). |
+| `e1` | `StoryApp` — the application entry point and game loop. |
 
-**SOLID:** Single Responsibility — codec only handles serialization.
-
----
-
-## Exercise 2 — StoryPrompt (`e1.prompt`)
-
-**Goal:** make each prompt a self-contained object.
-
-1. In `e1.prompt`, define `StoryPrompt` interface with a single method `String toPromptString()`.
-2. Implement `BeginPrompt(Player, String setting)` — formats the opening-scene prompt.
-3. Implement `AdvancePrompt(Player, String previousQuestion, String chosenAction)` — formats the continuation prompt.
-4. Both must instruct the LLM to respond with the `StoryResponse` JSON schema.
-5. Test: verify each prompt contains the expected player name, stats, setting/choice.
-
-**SOLID:** Open/Closed — new prompt types (e.g. `SummaryPrompt`) can be added without changing the engine.
+Read through the code, understand how the pieces fit together, and identify where you will
+work in the exercises below.
 
 ---
 
-## Exercise 3 — StoryView (`e1.view`)
+## Exercise 1 — StoryPrompt (`e1.prompt`)
 
-**Goal:** decouple presentation from the model.
+Look at the `StoryPrompt` interface and its implementations.
+Your task is to create two concrete prompt classes:
 
-1. In `e1.view`, define `StoryView` interface:
-   - `showBeat(String narrative, Player player, String question, List<String> choices)`
-   - `showGameOver(Player player)`
-   - `int readChoice(int numChoices)`
-2. Implement `ConsoleStoryView` using `System.out` + `Scanner`.
+1. **`BeginPrompt`** — for starting a new story.
+   It receives the player's name, initial stats, and a setting description.
+2. **`AdvancePrompt`** — for advancing the story.
+   It receives the current player state, the previous question, and the player's chosen action.
 
-**SOLID:** Interface Segregation — the view exposes only what the controller needs.
+When implementing `toPromptString()`, ensure the generated prompt is well-structured so the LLM
+can understand it. In particular:
 
----
-
-## Exercise 4 — StoryImpl (`e1.model`)
-
-**Goal:** implement the `Story` interface using a `StoryEngine`.
-
-1. Constructor takes `StoryEngine`, initial `Player`, and `setting`.
-   On construction, calls `engine.request(new BeginPrompt(...))` to get the first beat.
-2. `makeDecision(int)` creates an `AdvancePrompt` and calls `engine.request(...)`.
-3. Enforce: `IllegalStateException` if game is over, `IllegalArgumentException` for bad index.
-4. Test with a **mocked** `StoryEngine`:
-   - Opening beat loads on construction
-   - State advances correctly
-   - Game-over / bad-index are rejected
-
-**SOLID:** SRP (state only, no content generation), DIP (depends on `StoryEngine` interface).
+- Include clear instructions for the LLM to produce a narrative, a question, and a list of choices.
+- Follow prompt-engineering best practices: be explicit about the response format you expect
+  (e.g., a JSON object with specific fields) and provide an example if necessary.
+- Look at `StoryResponse` — the LLM's reply must match its fields (`narrative`, `question`,
+  `choices`, `updatedPlayer`, `gameOver`), because `JsonCodec` will deserialise the raw text
+  directly into that record.
 
 ---
 
-## Exercise 5 — LLMStoryEngine (`e1.engine`)
+## Exercise 2 — Test LLMStoryEngine (`e1.engine`)
 
-**Goal:** implement `StoryEngine` backed by a ChatModel.
+`LLMStoryEngine` is the implementation of `StoryEngine` that delegates to an LLM via `ChatModel`.
+It already handles retries and JSON decoding; your task is to **test** that the surrounding logic
+is consistent with the expected flow.
 
-1. Single method: `StoryResponse request(StoryPrompt prompt)`.
-2. Calls `prompt.toPromptString()`, sends to `ChatModel.chat(...)`.
-3. **Extract JSON** from the response (handle markdown fences, preamble text).
-4. Decode via `JsonCodec`. Retry up to N times, then throw `StoryEngineException`.
-5. Test with a **mocked** `ChatModel`:
-   - Valid JSON parses correctly
-   - JSON inside ` ```json ` fencing is extracted
-   - Retries on garbage, then succeeds
-   - Throws after all retries exhausted
-   - `extractJson` utility works on edge cases
+Using a **mocked** `ChatModel` (e.g., with Mockito), verify the following scenarios:
 
-**Key pattern:** the engine is prompt-agnostic — it doesn't know about begin vs. advance.
+1. **Happy path** — the model returns valid JSON on the first attempt; the engine parses it
+   correctly and returns a `StoryResponse`.
+2. **Retry and recover** — the model returns garbage on the first attempt(s) but valid JSON on a
+   later attempt; the engine retries and eventually succeeds.
+3. **All retries exhausted** — the model never returns valid JSON; the engine throws after
+   the configured number of retries.
+4. **Malformed JSON** — the model returns syntactically invalid JSON; the engine treats it as a
+   failed attempt and retries.
 
 ---
 
-## Bonus — Extend and Refactor
+## Bonus — R&D and Extensions
 
-- **Inventory system:** add `List<String> inventory` to `Player`, update prompts.
-- **Story memory:** add a `ContextPrompt` that summarises the story so far for long-term coherence.
-- **Persistence:** save/load game state to disk using `JsonCodec`.
-- **Alternative view:** implement a Swing/web `StoryView` — model and engine stay unchanged.
+These are open-ended tasks for further exploration and experimentation.
 
+- **Inventory system:**
+  Add a `List<String> inventory` field to `Player` and update the prompt templates so the LLM is
+  aware of the player's items. The LLM can then offer choices that depend on held items
+  (e.g., "Use the healing potion" only appears if the player has one). Think about how the
+  `StoryResponse` should communicate inventory changes back to the caller.
+
+- **Story memory / context window:**
+  LLM calls are stateless — each request is independent. Create a `ContextPrompt` (or a
+  prompt decorator) that appends a summary of previous beats to the current prompt, giving the
+  LLM long-term coherence. Consider the trade-off between context length and token cost, and
+  experiment with summarisation strategies (e.g., keep only the last *N* beats, or ask the LLM
+  to condense the history into a single paragraph).
 

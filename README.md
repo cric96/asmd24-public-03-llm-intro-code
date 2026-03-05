@@ -49,7 +49,9 @@ While ollama is accessed via HTTP requests, we'll use [langchain4j](https://gith
 
 ## Project Structure
 
-The project is organized into three sections:
+The project is organised into several sections:
+
+### Core Examples
 
 - **`it.unibo.basics`**: Core LLM interaction classes
     - `EmbeddingBaseExample`: Demonstrates embedding-based text similarity search
@@ -60,6 +62,16 @@ The project is organized into three sections:
 
 - **`it.unibo.prompt`**: Demonstrates prompt engineering techniques to enhance LLM performance
 
-## Advanced materials
+### LLM-in-the-Loop Applications
 
-For the curious, here is an example where we create a "semi-autonomous" pipeline for code generation: https://github.com/nicolasfara/experiments-2025-acm-iot-ac-llm.
+- **`it.unibo.tictactoe`**: A Tic Tac Toe game with an LLM-powered AI opponent (MVC architecture)
+    - `model` — Domain model: `Board`, `Player`, `TicTacToe` game logic
+    - `view` — Swing-based GUI: `SwingTicTacToeView`, `BoardView`
+    - `controller` — Game orchestration and AI integration:
+        - `GameController`, `PlayerLogic`, `UserPlayer` — game flow and human input
+        - `AIPlayer` — LLM-backed player with retry and fallback logic
+        - `controller.prompt` — `TicTacToePrompt`, `JsonMovePrompt` — prompt construction for the AI
+        - `controller.parser` — `MoveParser`, `GsonMoveParser`, `RegexMoveParser` — response parsing strategies
+        - `controller.formatter` — `BoardFormatter`, `TextBoardFormatter` — board-to-text formatting for prompts
+    - `App` — Entry point (human vs. AI)
+
